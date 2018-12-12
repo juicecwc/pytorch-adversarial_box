@@ -69,7 +69,7 @@ def test(model, loader, blackbox=False, hold_out_size=None):
     return acc
 
 
-def attack_over_test_data(model, adversary, param, loader_test, oracle=None):
+def attack_over_test_data(model, adversary, param, loader_test, oracle=None, normalize=None):
     """
     Given target model computes accuracy on perturbed data
     """
@@ -84,6 +84,12 @@ def attack_over_test_data(model, adversary, param, loader_test, oracle=None):
         y_pred = pred_batch(X, model)
         X_adv = adversary.perturb(X.numpy(), y_pred)
         X_adv = torch.from_numpy(X_adv)
+        if normalize:
+            mean, std = normalize
+            for t, m, s in zip(X_adv, mean, std):
+                t.mul_(s).add_(m)
+                t.clamp_(0., 1.)
+                t.sub_(m).div_(s)
 
         if oracle is not None:
             y_pred_adv = pred_batch(X_adv, oracle)
@@ -92,7 +98,7 @@ def attack_over_test_data(model, adversary, param, loader_test, oracle=None):
         
         total_correct += (y_pred_adv.numpy() == y.numpy()).sum()
 
-    acc = total_correct/total_samples
+    acc = 1.*total_correct/total_samples
 
     print('Got %d/%d correct (%.2f%%) on the perturbed data' 
         % (total_correct, total_samples, 100 * acc))

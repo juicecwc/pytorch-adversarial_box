@@ -39,7 +39,7 @@ class FGSMAttack(object):
         grad_sign = X_var.grad.data.cpu().sign().numpy()
 
         X += self.epsilon * grad_sign
-        X = np.clip(X, 0, 1)
+        # X = np.clip(X, 0, 1)
 
         return X
 
